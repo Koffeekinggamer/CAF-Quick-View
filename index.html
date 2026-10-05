@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CAF Quick View</title>
+  <style>
+    :root {
+      --paper: #f3efe6;
+      --card: #fffdf8;
+      --ink: #241c14;
+      --mute: #6f655b;
+      --line: #e3d9c8;
+      --walnut: #7a3e24;
+      --walnut-soft: #f4e6dc;
+      --green: #234237;
+      --shadow: 0 1px 0 rgba(36, 28, 20, 0.04), 0 12px 28px rgba(36, 28, 20, 0.05);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 400px at 10% -10%, rgba(122, 62, 36, 0.08), transparent 50%),
+        var(--paper);
+      font: 16px/1.45 "Avenir Next", "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 64px; }
+    header.top { margin-bottom: 18px; }
+    .eyebrow { margin: 0 0 4px; letter-spacing: 0.14em; text-transform: uppercase; font-size: 12px; color: var(--walnut); font-weight: 700; }
+    h1 { margin: 0; font-family: Palatino, "Iowan Old Style", Georgia, serif; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; }
+    h1 span { color: var(--mute); font-weight: 500; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+    #signin { max-width: 420px; }
+    .filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); margin-bottom: 6px; }
+    input[type="date"], input[type="text"], input[type="password"], select {
+      width: 100%;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    input[readonly] { background: #faf7f2; }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .presets button, .run {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .presets button[aria-pressed="true"] { background: var(--walnut-soft); border-color: #e2c7b6; color: var(--walnut); }
+    .actions { display: flex; gap: 8px; align-items: end; }
+    .run { background: var(--walnut); color: #fffdf8; border-color: var(--walnut); padding: 10px 18px; margin-top: 8px; }
+    .run:disabled { opacity: 0.6; cursor: wait; }
+    .cards { display: grid; grid-template-columns: 1.6fr 0.8fr; gap: 12px; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow); }
+    .card .k { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+    .card .v { font-family: Palatino, Georgia, serif; font-size: 36px; margin-top: 4px; letter-spacing: -0.03em; }
+    .card.lead { background: var(--green); color: #f6f3ea; border-color: var(--green); }
+    .card.lead .k { color: #d5e4db; }
+    .meta { color: var(--mute); font-size: 14px; margin: 2px 0 14px; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    h2 { margin: 0 0 12px; font-size: 18px; font-family: Palatino, Georgia, serif; }
+    .bar-row { display: grid; grid-template-columns: minmax(110px, 150px) 1fr auto; gap: 10px; align-items: center; margin: 8px 0; }
+    .bar-name { font-size: 14px; }
+    .track { height: 12px; background: #f0e8dc; border-radius: 999px; overflow: hidden; }
+    .fill { height: 100%; background: var(--walnut); border-radius: 999px; }
+    .bar-value { font-variant-numeric: tabular-nums; font-size: 14px; min-width: 108px; text-align: right; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+    th { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); font-weight: 700; }
+    th button { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; font-weight: 700; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody tr:hover { background: #fbf7f1; }
+    .status, .error { padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; }
+    .status { background: #fff; border: 1px dashed var(--line); color: var(--mute); }
+    .error { background: #fdecea; border: 1px solid #f0c2ba; color: #6d2418; }
+    footer { margin-top: 18px; color: var(--mute); font-size: 13px; }
+    .hidden { display: none; }
+    @media (max-width: 800px) {
+      h1 { font-size: 28px; }
+      .filters, .cards, .layout { grid-template-columns: 1fr; }
+      .card .v { font-size: 32px; }
+      .bar-row { grid-template-columns: 1fr auto; }
+      .bar-name { grid-column: 1 / -1; }
+    }
+    @media print {
+      body { background: white; }
+      #signin, .filters-panel, footer { display: none; }
+      .card, .layout > .panel { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="top">
+      <p class="eyebrow">CAF Quick View</p>
+      <h1>Sales by User <span>(including Split Sales)</span></h1>
+    </header>
+
+    <form class="panel" id="signin">
+      <div>
+        <label for="user">User</label>
+        <input id="user" name="user" type="text" autocomplete="username" value="charleston">
+      </div>
+      <div style="margin-top: 12px;">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="run" id="open" type="submit">Open</button>
+    </form>
+
+    <div id="message" class="status hidden"></div>
+
+    <div id="app" class="hidden">
+      <form class="panel filters-panel" id="filters">
+        <div class="filters">
+          <div>
+            <label for="start">From</label>
+            <input id="start" type="date" readonly>
+          </div>
+          <div>
+            <label for="end">Through</label>
+            <input id="end" type="date" readonly>
+          </div>
+          <div>
+            <label for="category">Category</label>
+            <select id="category"></select>
+          </div>
+          <div class="actions">
+            <button class="run" id="run" type="submit">Show</button>
+          </div>
+        </div>
+        <div class="presets" id="presets">
+          <button type="button" data-preset="month" aria-pressed="true">This month</button>
+          <button type="button" data-preset="last">Last month</button>
+          <button type="button" data-preset="ytd">Year to date</button>
+        </div>
+      </form>
+
+      <div id="results" class="hidden">
+        <p class="meta" id="meta"></p>
+        <section class="cards">
+          <article class="card lead">
+            <div class="k">All sales</div>
+            <div class="v" id="total-all">—</div>
+          </article>
+          <article class="card">
+            <div class="k">Salespeople</div>
+            <div class="v" id="total-people">—</div>
+          </article>
+        </section>
+        <div class="layout">
+          <section class="panel">
+            <h2>All sales</h2>
+            <div id="chart"></div>
+          </section>
+          <section class="panel">
+            <h2>By salesperson</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th><button type="button" data-sort="name">Name</button></th>
+                  <th class="num"><button type="button" data-sort="all_sales">All sales</button></th>
+                  <th class="num"><button type="button" data-sort="share">Share</button></th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </div>
+    <footer>All locations, by sales order date. This month, last month, and year to date refresh from Charleston OrderTrac through the day.</footer>
+  </main>
+  <script>
+    const state = { snapshot: null, preset: "month", rows: [], sort: "all_sales", dir: "desc" };
+    const savedKey = "caf-quick-view-password";
+
+    function b64(value) {
+      const bin = atob(value);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    async function decrypt(file, password) {
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+      const key = await crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: b64(file.salt), iterations: file.iter, hash: "SHA-256" },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+      const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(file.iv) }, key, b64(file.ct));
+      return JSON.parse(new TextDecoder().decode(plain));
+    }
+    function showMessage(text, isError) {
+      const node = document.getElementById("message");
+      node.className = isError ? "error" : "status";
+      node.textContent = text;
+      node.classList.remove("hidden");
+    }
+    function hideMessage() {
+      document.getElementById("message").classList.add("hidden");
+    }
+    function fillSelect(options) {
+      const select = document.getElementById("category");
+      select.innerHTML = "";
+      options.forEach((option) => {
+        const node = document.createElement("option");
+        node.value = option.id;
+        node.textContent = option.name || "ALL";
+        select.appendChild(node);
+      });
+    }
+    function render() {
+      const rows = state.rows.slice().sort((a, b) => {
+        const key = state.sort;
+        const av = key === "name" ? String(a[key]).toLocaleLowerCase() : Number(a[key]);
+        const bv = key === "name" ? String(b[key]).toLocaleLowerCase() : Number(b[key]);
+        if (av < bv) return state.dir === "asc" ? -1 : 1;
+        if (av > bv) return state.dir === "asc" ? 1 : -1;
+        return a.order - b.order;
+      });
+      const body = document.getElementById("rows");
+      body.innerHTML = "";
+      const chart = document.getElementById("chart");
+      chart.innerHTML = "";
+      const max = rows.reduce((top, row) => Math.max(top, Number(row.all_sales)), 0);
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td></td><td class="num"></td><td class="num"></td>`;
+        tr.children[0].textContent = row.name;
+        tr.children[1].textContent = row.all_display;
+        tr.children[2].textContent = row.share + "%";
+        body.appendChild(tr);
+        const wrap = document.createElement("div");
+        wrap.className = "bar-row";
+        const name = document.createElement("div");
+        name.className = "bar-name";
+        name.textContent = row.name;
+        const track = document.createElement("div");
+        track.className = "track";
+        const fill = document.createElement("div");
+        fill.className = "fill";
+        const width = max > 0 ? Math.max(0, Number(row.all_sales)) / max * 100 : 0;
+        fill.style.width = width.toFixed(1) + "%";
+        track.appendChild(fill);
+        const value = document.createElement("div");
+        value.className = "bar-value";
+        value.textContent = row.all_display;
+        wrap.append(name, track, value);
+        chart.appendChild(wrap);
+      });
+    }
+    function showReport() {
+      const category = document.getElementById("category").value;
+      const key = category ? `${state.preset}:${category}` : state.preset;
+      const data = state.snapshot.reports[key];
+      document.getElementById("results").classList.add("hidden");
+      if (!data) {
+        showMessage("That view is not in the latest update.", true);
+        return;
+      }
+      state.rows = data.rows;
+      document.getElementById("start").value = data.start;
+      document.getElementById("end").value = data.end;
+      document.getElementById("total-all").textContent = data.total_all_display;
+      document.getElementById("total-people").textContent = String(data.rows.length);
+      const when = [data.start, data.end].map((value) => {
+        const [y, m, d] = value.split("-").map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      }).join(" – ");
+      document.getElementById("meta").textContent =
+        `${when} · ${data.location} · ${data.date_type} · ${data.category} · Updated ${data.pulled_at}`;
+      hideMessage();
+      document.getElementById("results").classList.remove("hidden");
+      if (!data.rows.length) showMessage("No sales in this range.", false);
+      render();
+    }
+    async function unlock(password) {
+      const button = document.getElementById("open");
+      button.disabled = true;
+      showMessage("Opening the report…", false);
+      try {
+        const response = await fetch("data.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("The report has not been published yet.");
+        const file = await response.json();
+        const snapshot = await decrypt(file, password);
+        state.snapshot = snapshot;
+        sessionStorage.setItem(savedKey, password);
+        document.getElementById("signin").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        fillSelect(snapshot.categories);
+        state.preset = "month";
+        hideMessage();
+        showReport();
+      } catch (error) {
+        sessionStorage.removeItem(savedKey);
+        const failed = error && error.name === "OperationError";
+        showMessage(failed ? "That password did not open the report." : (error.message || "Could not open the report."), true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.getElementById("signin").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const user = document.getElementById("user").value.trim().toLowerCase();
+      if (user !== "charleston") {
+        showMessage("That password did not open the report.", true);
+        return;
+      }
+      unlock(document.getElementById("password").value);
+    });
+    document.getElementById("filters").addEventListener("submit", (event) => {
+      event.preventDefault();
+      showReport();
+    });
+    document.getElementById("presets").addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      state.preset = button.dataset.preset;
+      document.querySelectorAll("#presets button").forEach((item) => {
+        item.setAttribute("aria-pressed", item === button ? "true" : "false");
+      });
+      showReport();
+    });
+    document.getElementById("category").addEventListener("change", showReport);
+    document.querySelector("thead").addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      const key = button.dataset.sort;
+      if (state.sort === key) state.dir = state.dir === "asc" ? "desc" : "asc";
+      else {
+        state.sort = key;
+        state.dir = key === "name" ? "asc" : "desc";
+      }
+      render();
+    });
+
+    const saved = sessionStorage.getItem(savedKey);
+    if (saved) unlock(saved);
+  </script>
+</body>
+</html>
