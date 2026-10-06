@@ -74,12 +74,27 @@
       <p id="empty" class="empty hidden">No sales yet today.</p>
       <footer>
         <span id="updated"></span>
-        <a href="index.html">Full report</a>
+        <a id="full-report" href="index.html">Full report</a>
       </footer>
     </div>
   </main>
   <script>
     const savedKey = "caf-quick-view-widget-password";
+    const bootKey = "caf-quick-view-boot";
+
+    function currentBoot() {
+      return new URLSearchParams(location.hash.replace(/^#/, "")).get("boot") || "";
+    }
+    function rememberBoot() {
+      const boot = currentBoot();
+      if (!boot) return;
+      const previous = localStorage.getItem(bootKey);
+      if (previous && previous !== boot) {
+        localStorage.removeItem(savedKey);
+        localStorage.removeItem("caf-quick-view-password");
+      }
+      localStorage.setItem(bootKey, boot);
+    }
 
     function b64(value) {
       const bin = atob(value);
@@ -148,6 +163,8 @@
         showError(error && error.name === "OperationError" ? "That password did not open the report." : (error.message || "Could not open the report."));
       }
     });
+    document.getElementById("full-report").href = "index.html" + location.hash;
+    rememberBoot();
     const saved = localStorage.getItem(savedKey);
     if (saved) {
       unlock(saved).catch(() => {

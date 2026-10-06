@@ -131,8 +131,8 @@
           </div>
         </div>
         <div class="presets" id="presets">
-          <button type="button" data-preset="today">Today</button>
-          <button type="button" data-preset="month" aria-pressed="true">This month</button>
+          <button type="button" data-preset="today" aria-pressed="true">Today</button>
+          <button type="button" data-preset="month">This month</button>
           <button type="button" data-preset="last">Last month</button>
           <button type="button" data-preset="ytd">Year to date</button>
         </div>
@@ -174,8 +174,23 @@
     <footer>All locations, by sales order date. Today, this month, last month, and year to date refresh from Charleston OrderTrac through the day.</footer>
   </main>
   <script>
-    const state = { snapshot: null, preset: "month", rows: [], sort: "all_sales", dir: "desc" };
+    const state = { snapshot: null, preset: "today", rows: [], sort: "all_sales", dir: "desc" };
     const savedKey = "caf-quick-view-password";
+    const bootKey = "caf-quick-view-boot";
+
+    function currentBoot() {
+      return new URLSearchParams(location.hash.replace(/^#/, "")).get("boot") || "";
+    }
+    function rememberBoot() {
+      const boot = currentBoot();
+      if (!boot) return;
+      const previous = localStorage.getItem(bootKey);
+      if (previous && previous !== boot) {
+        localStorage.removeItem(savedKey);
+        localStorage.removeItem("caf-quick-view-widget-password");
+      }
+      localStorage.setItem(bootKey, boot);
+    }
 
     function b64(value) {
       const bin = atob(value);
@@ -283,14 +298,14 @@
         const file = await response.json();
         const snapshot = await decrypt(file, password);
         state.snapshot = snapshot;
-        sessionStorage.setItem(savedKey, password);
+        localStorage.setItem(savedKey, password);
         document.getElementById("signin").classList.add("hidden");
         document.getElementById("app").classList.remove("hidden");
-        state.preset = "month";
+        state.preset = "today";
         hideMessage();
         showReport();
       } catch (error) {
-        sessionStorage.removeItem(savedKey);
+        localStorage.removeItem(savedKey);
         const failed = error && error.name === "OperationError";
         showMessage(failed ? "That password did not open the report." : (error.message || "Could not open the report."), true);
       } finally {
@@ -332,7 +347,8 @@
       render();
     });
 
-    const saved = sessionStorage.getItem(savedKey);
+    rememberBoot();
+    const saved = localStorage.getItem(savedKey);
     if (saved) unlock(saved);
   </script>
 </body>

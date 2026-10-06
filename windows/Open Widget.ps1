@@ -1,6 +1,7 @@
 # Opens CAF Quick View as a small always-on-top window in Edge.
 $ErrorActionPreference = "Stop"
-$url = "https://koffeekinggamer.github.io/CAF-Quick-View/widget.html"
+$boot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("yyyyMMddHHmmss")
+$url = "https://koffeekinggamer.github.io/CAF-Quick-View/widget.html#boot=$boot"
 
 $pf86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
 $candidates = @(
