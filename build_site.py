@@ -183,6 +183,7 @@ def ranges(today: date, max_days: int) -> dict[str, tuple[date, date]]:
     if (today - ytd_start).days > max_days:
         ytd_start = today - timedelta(days=max_days)
     return {
+        "today": (today, today),
         "month": (month_start, today),
         "last": (last_start, last_end),
         "ytd": (ytd_start, today),

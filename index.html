@@ -135,6 +135,7 @@
           </div>
         </div>
         <div class="presets" id="presets">
+          <button type="button" data-preset="today">Today</button>
           <button type="button" data-preset="month" aria-pressed="true">This month</button>
           <button type="button" data-preset="last">Last month</button>
           <button type="button" data-preset="ytd">Year to date</button>
@@ -174,7 +175,7 @@
         </div>
       </div>
     </div>
-    <footer>All locations, by sales order date. This month, last month, and year to date refresh from Charleston OrderTrac through the day.</footer>
+    <footer>All locations, by sales order date. Today, this month, last month, and year to date refresh from Charleston OrderTrac through the day.</footer>
   </main>
   <script>
     const state = { snapshot: null, preset: "month", rows: [], sort: "all_sales", dir: "desc" };
