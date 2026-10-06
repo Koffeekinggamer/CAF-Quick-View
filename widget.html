@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CAF Quick View</title>
+  <style>
+    :root {
+      --paper: #f3efe6;
+      --card: #fffdf8;
+      --ink: #241c14;
+      --mute: #6f655b;
+      --line: #e3d9c8;
+      --walnut: #7a3e24;
+      --green: #234237;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.4 "Segoe UI", "Avenir Next", sans-serif;
+    }
+    main { padding: 16px 16px 20px; }
+    .eyebrow { margin: 0; letter-spacing: 0.14em; text-transform: uppercase; font-size: 11px; color: var(--walnut); font-weight: 700; }
+    h1 { margin: 8px 0 0; font-size: 13px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); }
+    .today { margin: 2px 0 0; font-family: Palatino, Georgia, serif; font-size: 46px; letter-spacing: -0.03em; line-height: 1.05; }
+    .date { margin: 2px 0 14px; color: var(--mute); font-size: 13px; }
+    .month {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--green);
+      color: #f6f3ea;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .month span { font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #d5e4db; }
+    .month strong { font-family: Palatino, Georgia, serif; font-size: 20px; font-weight: 600; }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    li b { font-weight: 600; }
+    .amt { font-variant-numeric: tabular-nums; }
+    form label { display: block; margin: 14px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mute); }
+    input, button { font: inherit; color: inherit; }
+    input { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; }
+    button { margin-top: 10px; border: 0; border-radius: 999px; background: var(--walnut); color: #fffdf8; padding: 10px 16px; cursor: pointer; }
+    .msg { margin-top: 12px; color: #6d2418; }
+    .empty { color: var(--mute); padding: 8px 0; }
+    footer { margin-top: 14px; color: var(--mute); font-size: 12px; }
+    footer a { color: var(--walnut); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">CAF Quick View</p>
+    <form id="signin">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Open</button>
+      <p id="error" class="msg hidden"></p>
+    </form>
+    <div id="board" class="hidden">
+      <h1>Today</h1>
+      <p class="today" id="today-total">—</p>
+      <p class="date" id="today-date"></p>
+      <div class="month">
+        <span>This month</span>
+        <strong id="month-total">—</strong>
+      </div>
+      <ul id="people"></ul>
+      <p id="empty" class="empty hidden">No sales yet today.</p>
+      <footer>
+        <span id="updated"></span>
+        <a href="index.html">Full report</a>
+      </footer>
+    </div>
+  </main>
+  <script>
+    const savedKey = "caf-quick-view-widget-password";
+
+    function b64(value) {
+      const bin = atob(value);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    async function decrypt(file, password) {
+      const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+      const key = await crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: b64(file.salt), iterations: file.iter, hash: "SHA-256" },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+      const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(file.iv) }, key, b64(file.ct));
+      return JSON.parse(new TextDecoder().decode(plain));
+    }
+    function showError(text) {
+      const node = document.getElementById("error");
+      node.textContent = text;
+      node.classList.remove("hidden");
+    }
+    function pretty(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    function render(snapshot) {
+      const today = snapshot.reports.today;
+      const month = snapshot.reports.month;
+      document.getElementById("signin").classList.add("hidden");
+      document.getElementById("board").classList.remove("hidden");
+      document.getElementById("today-total").textContent = today ? today.total_all_display : "—";
+      document.getElementById("today-date").textContent = today ? pretty(today.start) : "";
+      document.getElementById("month-total").textContent = month ? month.total_all_display : "—";
+      const list = document.getElementById("people");
+      list.innerHTML = "";
+      const rows = (today && today.rows ? today.rows : []).slice().sort((a, b) => Number(b.all_sales) - Number(a.all_sales));
+      document.getElementById("empty").classList.toggle("hidden", rows.length > 0);
+      rows.forEach((row) => {
+        const item = document.createElement("li");
+        const name = document.createElement("b");
+        name.textContent = row.name;
+        const amount = document.createElement("span");
+        amount.className = "amt";
+        amount.textContent = row.all_display;
+        item.append(name, amount);
+        list.appendChild(item);
+      });
+      document.getElementById("updated").textContent = snapshot.pulled_at ? "Updated " + snapshot.pulled_at : "";
+    }
+    async function unlock(password) {
+      const response = await fetch("data.json", { cache: "no-store" });
+      if (!response.ok) throw new Error("The report has not been published yet.");
+      const snapshot = await decrypt(await response.json(), password);
+      localStorage.setItem(savedKey, password);
+      render(snapshot);
+    }
+    document.getElementById("signin").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        await unlock(document.getElementById("password").value);
+      } catch (error) {
+        localStorage.removeItem(savedKey);
+        showError(error && error.name === "OperationError" ? "That password did not open the report." : (error.message || "Could not open the report."));
+      }
+    });
+    const saved = localStorage.getItem(savedKey);
+    if (saved) {
+      unlock(saved).catch(() => {
+        localStorage.removeItem(savedKey);
+        showError("Sign in again to open the report.");
+      });
+    }
+    setInterval(() => {
+      const password = localStorage.getItem(savedKey);
+      if (password) unlock(password).catch(() => {});
+    }, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
