@@ -126,10 +126,6 @@
             <label for="end">Through</label>
             <input id="end" type="date" readonly>
           </div>
-          <div>
-            <label for="category">Category</label>
-            <select id="category"></select>
-          </div>
           <div class="actions">
             <button class="run" id="run" type="submit">Show</button>
           </div>
@@ -214,16 +210,6 @@
     function hideMessage() {
       document.getElementById("message").classList.add("hidden");
     }
-    function fillSelect(options) {
-      const select = document.getElementById("category");
-      select.innerHTML = "";
-      options.forEach((option) => {
-        const node = document.createElement("option");
-        node.value = option.id;
-        node.textContent = option.name || "ALL";
-        select.appendChild(node);
-      });
-    }
     function render() {
       const rows = state.rows.slice().sort((a, b) => {
         const key = state.sort;
@@ -265,9 +251,7 @@
       });
     }
     function showReport() {
-      const category = document.getElementById("category").value;
-      const key = category ? `${state.preset}:${category}` : state.preset;
-      const data = state.snapshot.reports[key];
+      const data = state.snapshot.reports[state.preset];
       document.getElementById("results").classList.add("hidden");
       if (!data) {
         showMessage("That view is not in the latest update.", true);
@@ -283,7 +267,7 @@
         return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
       }).join(" – ");
       document.getElementById("meta").textContent =
-        `${when} · ${data.location} · ${data.date_type} · ${data.category} · Updated ${data.pulled_at}`;
+        `${when} · ${data.location} · ${data.date_type} · Updated ${data.pulled_at}`;
       hideMessage();
       document.getElementById("results").classList.remove("hidden");
       if (!data.rows.length) showMessage("No sales in this range.", false);
@@ -302,7 +286,6 @@
         sessionStorage.setItem(savedKey, password);
         document.getElementById("signin").classList.add("hidden");
         document.getElementById("app").classList.remove("hidden");
-        fillSelect(snapshot.categories);
         state.preset = "month";
         hideMessage();
         showReport();
@@ -337,7 +320,6 @@
       });
       showReport();
     });
-    document.getElementById("category").addEventListener("change", showReport);
     document.querySelector("thead").addEventListener("click", (event) => {
       const button = event.target.closest("button");
       if (!button) return;

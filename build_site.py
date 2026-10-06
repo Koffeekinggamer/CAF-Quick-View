@@ -277,24 +277,22 @@ def main() -> None:
         raise BuildError("OrderTrac did not offer a sales order date.")
     if not any(item["id"] == "" for item in form["locations"]):
         raise BuildError("OrderTrac did not offer all locations.")
+    if not any(item["id"] == "" for item in form["categories"]):
+        raise BuildError("OrderTrac did not offer all categories.")
     today = datetime.now(EASTERN).date()
     windows = ranges(today, int(form["max_days"]))
     pulled_at = datetime.now(EASTERN).strftime("%b %-d, %Y · %-I:%M %p ET")
     reports: dict[str, dict] = {}
-    categories = form["categories"]
-    total = len(windows) * len(categories)
+    total = len(windows)
     done = 0
     for preset, (start, end) in windows.items():
-        for category in categories:
-            done += 1
-            key = preset if not category["id"] else f"{preset}:{category['id']}"
-            print(f"[{done}/{total}] {preset} {category['name']}", flush=True)
-            rows = pull_csv(session, form, start, end, category["id"])
-            reports[key] = report_payload(rows, start, end, category["name"], pulled_at)
-            time.sleep(0.2)
+        done += 1
+        print(f"[{done}/{total}] {preset} all categories", flush=True)
+        rows = pull_csv(session, form, start, end, "")
+        reports[preset] = report_payload(rows, start, end, "All categories", pulled_at)
+        time.sleep(0.2)
     snapshot = {
         "pulled_at": pulled_at,
-        "categories": [{"id": item["id"], "name": item["name"]} for item in categories],
         "reports": reports,
     }
     SITE.mkdir(parents=True, exist_ok=True)
