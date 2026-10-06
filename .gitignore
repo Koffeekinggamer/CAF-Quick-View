@@ -1,4 +1,6 @@
 site/
+.last-hash
+refresh.log
 __pycache__/
 *.pyc
 .DS_Store

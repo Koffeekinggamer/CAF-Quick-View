@@ -171,7 +171,7 @@
         </div>
       </div>
     </div>
-    <footer>All locations, by sales order date. Today, this month, last month, and year to date refresh from Charleston OrderTrac through the day.</footer>
+    <footer>Sales order date. Today, this month, last month, and year to date update from Charleston OrderTrac through the day.</footer>
   </main>
   <script>
     const state = { snapshot: null, preset: "today", rows: [], sort: "all_sales", dir: "desc" };
@@ -282,7 +282,7 @@
         return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
       }).join(" – ");
       document.getElementById("meta").textContent =
-        `${when} · ${data.location} · ${data.date_type} · Updated ${data.pulled_at}`;
+        `${when} · ${data.date_type} · Updated ${data.pulled_at}`;
       hideMessage();
       document.getElementById("results").classList.remove("hidden");
       if (!data.rows.length) showMessage("No sales in this range.", false);

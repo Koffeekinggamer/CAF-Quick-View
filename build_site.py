@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import base64
 import csv
+import hashlib
 import io
 import json
 import os
@@ -295,7 +296,13 @@ def main() -> None:
         "pulled_at": pulled_at,
         "reports": reports,
     }
+    stable = {
+        key: {field: value for field, value in report.items() if field != "pulled_at"}
+        for key, report in reports.items()
+    }
+    plain = json.dumps(stable, sort_keys=True)
     SITE.mkdir(parents=True, exist_ok=True)
+    (SITE / "plain-hash.txt").write_text(hashlib.sha256(plain.encode()).hexdigest() + "\n", encoding="utf-8")
     stamp = datetime.now(EASTERN).strftime("%Y%m%d%H%M%S")
     html = (ROOT / "index.html").read_text(encoding="utf-8").replace("data.json", f"data.json?v={stamp}")
     (SITE / "index.html").write_text(html, encoding="utf-8")
